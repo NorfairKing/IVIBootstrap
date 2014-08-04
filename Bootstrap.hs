@@ -1,20 +1,20 @@
-import Control.Monad (filterM)
+import Control.Monad (filterM, liftM)
 import System.Directory (getCurrentDirectory, getDirectoryContents, doesDirectoryExist)
-import System.FilePath ((</>))
+import System.FilePath ((</>), takeDirectory)
 import System.FilePath.Posix (takeExtension)
 
-
-import IVIConfig
-import Constants (scriptListFile)
+import Config
+import Constants (scriptListFile, iviExtension, versionFileName)
+import Entry
 import Version (checkVersion)
 
 -- | Execute IVI's bootstrap procedure
 main :: IO ()
 main = do
     candidates <- filterM isScriptDir =<< getDirectoryContents =<< getCurrentDirectory
-    scripts <- mapM parseScriptDir candidates
-    let fileContents = joinList $ concat scripts
-    writeFile scriptListFile fileContents    
+    entriess <- mapM parseScriptDir candidates
+    let fileContents = joinEntries $ concat entriess
+    writeFile scriptListFile fileContents
 
 
 -- | Determine whether the given path leads to a script directory
@@ -26,70 +26,45 @@ isScriptDir dirName = do
     if not isdir
     then return False
     else do
-        iviFiles <- getIviFiles dirName
+        iviFiles <- getConfigFiles dirName
         return $ (not . null) iviFiles
 
 -- | Get all paths to ivi files in a given directory
-getIviFiles :: FilePath -> IO [FilePath]
-getIviFiles dir = do
+getConfigFiles :: FilePath -> IO [FilePath]
+getConfigFiles dir = do
         dirContents <- getDirectoryContents dir
-        let iviFiles = filter (\x -> takeExtension x == ".ivi") dirContents
-        return iviFiles    
-
+        let iviFiles = filter (\x -> takeExtension x == iviExtension) dirContents
+        return iviFiles
+        
 -- | Parse all scripts in a script dir
-parseScriptDir :: FilePath -> IO [(String, String)]
+parseScriptDir :: FilePath -> IO [Entry]
 parseScriptDir dir = do
-    scriptVersion <- readFile $ dir </> "VERSION"
-    iviVersion <- readFile $  ".." </> ".." </> "VERSION"
+    scriptVersion <- readFile $ dir </> versionFileName
+    
+    scriptVersionFile <- ((</> versionFileName) . takeDirectory . takeDirectory) `liftM` getCurrentDirectory
+    iviVersion <- readFile $ scriptVersionFile
+    
     if checkVersion scriptVersion iviVersion
     then do
-        iviFiles <- getIviFiles dir  
-        putStrLn dir   
-        scripts <- mapM (parseScript dir) iviFiles
-        putStrLn ""    
-        return scripts    
-    else do 
+        configFileNames <- getConfigFiles dir
+        putStrLn dir    
+        let configFiles = map (dir </>) configFileNames
+        configs <- mapM getConfig configFiles
+        let entries = map generateEntry configs
+        mapM_ putStrLn $ map ("|- " ++) configFileNames
+        putStrLn ""
+        return entries
+    else do
         putStrLn $ "Not adding scripts in " ++ dir ++ "because the ivi versions aren't compatible"
         return []
 
--- | Parse a script file into the necesary imports and entry
-parseScript :: FilePath -> FilePath -> IO (String, String)
-parseScript scriptDir iviFile = do
-    cfg <- getIVIConfig $ scriptDir </> iviFile
-    putStrLn $ "|- " ++ name cfg
-    return ("import " 
-            ++ "Scripts" 
-            ++ "."
-            ++ scriptDir 
-            ++ "." 
-            ++ sourceFileName cfg
-            ++ " ("
-            ++ executeFunctionName cfg
-            ++ ")"
-            , 
-               "Script " 
-            ++ show (name cfg)
-            ++ " "
-            ++ "Scripts."
-            ++ scriptDir 
-            ++ "." 
-            ++ sourceFileName cfg 
-            ++ "." 
-            ++ executeFunctionName cfg
-            ++ " " 
-            ++ show (regexes cfg)
-            )
 
 -- | Join the imports and entries into the final source file.
-joinList :: [(String, String)] -> String
-joinList scripts = contents
-    where 
-        (imports,entries) = unzip scripts
-        
-        fix [] = ""
-        fix [e] = "              " ++ e ++ "\n"
-        fix (e:es) = fix es ++ "            , " ++ e ++ "\n"
-        
+joinEntries :: [Entry] -> String
+joinEntries entries = contents
+    where
+        (is,ss) = unzip $ map (\(Entry i s) -> (i,s)) entries
+
         contents = "{-|\n"
                 ++ "Module      : ScriptsList\n"
                 ++ "Description : The list of scripts that can be used\n"
@@ -98,11 +73,17 @@ joinList scripts = contents
                 ++ "-}\n"
                 ++ "module Scripts.ScriptsList where\n"
                 ++ "import Script\n"
-                ++ unlines imports
+                ++ unlines is
                 ++ "\n"
                 ++ "-- | The list of scripts\n"
                 ++ "scripts :: [IVIScript] \n"
                 ++ "scripts = [\n"
-                ++ fix entries
+                ++ fix ss
                 ++ "          ]\n"
+
+        fix [] = ""
+        fix [e] = "              " ++ e ++ "\n"
+        fix (e:es) = fix es ++ "            , " ++ e ++ "\n"
+
+
 

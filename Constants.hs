@@ -10,3 +10,9 @@ sourceFileNameConfig = "sourceFileName"
 nameConfig = "name"
 executeFunctionNameConfig = "executeFunctionName"
 regexesConfig = "regexes"
+
+iviExtension :: String
+iviExtension = ".ivi"
+
+versionFileName :: String
+versionFileName = "VERSION"
