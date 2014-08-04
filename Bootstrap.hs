@@ -3,9 +3,9 @@ import System.Directory (getCurrentDirectory, getDirectoryContents, doesDirector
 import System.FilePath ((</>), takeDirectory)
 import System.FilePath.Posix (takeExtension)
 
-import Config
+import Config (getConfig)
 import Constants (scriptListFile, iviExtension, versionFileName)
-import Entry
+import Entry (Entry (..), generateEntry)
 import Version (checkVersion)
 
 -- | Execute IVI's bootstrap procedure
@@ -42,7 +42,7 @@ parseScriptDir dir = do
     scriptVersion <- readFile $ dir </> versionFileName
     
     scriptVersionFile <- ((</> versionFileName) . takeDirectory . takeDirectory) `liftM` getCurrentDirectory
-    iviVersion <- readFile $ scriptVersionFile
+    iviVersion <- readFile scriptVersionFile
     
     if checkVersion scriptVersion iviVersion
     then do
@@ -51,7 +51,7 @@ parseScriptDir dir = do
         let configFiles = map (dir </>) configFileNames
         configs <- mapM getConfig configFiles
         let entries = map generateEntry configs
-        mapM_ putStrLn $ map ("|- " ++) configFileNames
+        mapM_ (putStrLn . ("|- " ++)) configFileNames
         putStrLn ""
         return entries
     else do
@@ -65,25 +65,36 @@ joinEntries entries = contents
     where
         (is,ss) = unzip $ map (\(Entry i s) -> (i,s)) entries
 
-        contents = "{-|\n"
+        contents = moduleDoc
+                ++ moduleDeclaration
+                ++ scriptImport
+                ++ imports
+                ++ "\n"
+                ++ scriptsListDoc
+                ++ scriptsListHeader
+                ++ scriptsList
+
+        moduleDoc = "{-|\n"
                 ++ "Module      : ScriptsList\n"
                 ++ "Description : The list of scripts that can be used\n"
                 ++ "This file is generated, there is no use in modifying it directly\n"
                 ++ "Please just make sure the .ivi files are in order.\n"
                 ++ "-}\n"
-                ++ "module Scripts.ScriptsList where\n"
-                ++ "import Script\n"
-                ++ unlines is
-                ++ "\n"
-                ++ "-- | The list of scripts\n"
-                ++ "scripts :: [IVIScript] \n"
-                ++ "scripts = [\n"
-                ++ fix ss
-                ++ "          ]\n"
+
+        moduleDeclaration = "module Scripts.ScriptsList where\n\n"
+
+        scriptImport = "import Script\n\n"
+    
+        imports = unlines is
+
+        scriptsListDoc = "-- | The list of scripts\n"        
+
+        scriptsListHeader = "scripts :: [IVIScript] \n"
+
+        scriptsList = "scripts = [\n"
+                    ++ fix ss
+                    ++ "          ]\n"
 
         fix [] = ""
         fix [e] = "              " ++ e ++ "\n"
         fix (e:es) = fix es ++ "            , " ++ e ++ "\n"
-
-
-
