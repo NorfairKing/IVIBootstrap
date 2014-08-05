@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Constants where
 
 import Data.Configurator.Types (Name)

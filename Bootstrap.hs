@@ -1,3 +1,5 @@
+module Main (main) where
+
 import Control.Monad (filterM, liftM)
 import System.Directory (getCurrentDirectory, getDirectoryContents, doesDirectoryExist)
 import System.FilePath ((</>), takeDirectory)
