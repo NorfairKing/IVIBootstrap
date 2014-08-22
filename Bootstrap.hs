@@ -10,8 +10,6 @@ import Constants (scriptListFile, iviExtension, versionFileName)
 import Entry (Entry (..), generateEntry)
 import Version (checkVersion)
 
-import Regex.Regex
-
 -- | Execute IVI's bootstrap procedure
 main :: IO ()
 main = do
