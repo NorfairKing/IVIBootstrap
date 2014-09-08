@@ -49,11 +49,11 @@ parseScriptDir dir = do
     if checkVersion scriptVersion iviVersion
     then do
         configFileNames <- getConfigFiles dir
-        putStrLn dir    
+        putStrLn $ " * " ++ dir    
         let configFiles = map (dir </>) configFileNames
         configs <- mapM getConfig configFiles
         let entries = map generateEntry configs
-        mapM_ (putStrLn . ("|- " ++)) configFileNames
+        mapM_ (putStrLn . ("   |- " ++)) configFileNames
         putStrLn ""
         return entries
     else do
