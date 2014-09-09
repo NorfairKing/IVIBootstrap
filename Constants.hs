@@ -2,7 +2,7 @@
 
 module Constants where
 
-import Data.Configurator.Types (Name)
+import           Data.Configurator.Types (Name)
 
 scriptListFile :: FilePath
 scriptListFile = "ScriptsList.hs"

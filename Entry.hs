@@ -3,7 +3,7 @@
 -}
 module Entry where
 
-import Config
+import           Config
 
 data Entry = Entry Import Script
 

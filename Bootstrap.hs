@@ -1,14 +1,16 @@
 module Main (main) where
 
-import Control.Monad (filterM, liftM)
-import System.Directory (getCurrentDirectory, getDirectoryContents, doesDirectoryExist)
-import System.FilePath ((</>), takeDirectory)
-import System.FilePath.Posix (takeExtension)
+import           Control.Monad         (filterM, liftM)
+import           System.Directory      (doesDirectoryExist, getCurrentDirectory,
+                                        getDirectoryContents)
+import           System.FilePath       (takeDirectory, (</>))
+import           System.FilePath.Posix (takeExtension)
 
-import Config (getConfig)
-import Constants (scriptListFile, iviExtension, versionFileName)
-import Entry (Entry (..), generateEntry)
-import Version (checkVersion)
+import           Config                (getConfig)
+import           Constants             (iviExtension, scriptListFile,
+                                        versionFileName)
+import           Entry                 (Entry (..), generateEntry)
+import           Version               (checkVersion)
 
 -- | Execute IVI's bootstrap procedure
 main :: IO ()
@@ -37,19 +39,19 @@ getConfigFiles dir = do
         dirContents <- getDirectoryContents dir
         let iviFiles = filter (\x -> takeExtension x == iviExtension) dirContents
         return iviFiles
-        
+
 -- | Parse all scripts in a script dir
 parseScriptDir :: FilePath -> IO [Entry]
 parseScriptDir dir = do
     scriptVersion <- readFile $ dir </> versionFileName
-    
+
     scriptVersionFile <- ((</> versionFileName) . takeDirectory . takeDirectory) `liftM` getCurrentDirectory
     iviVersion <- readFile scriptVersionFile
-    
+
     if checkVersion scriptVersion iviVersion
     then do
         configFileNames <- getConfigFiles dir
-        putStrLn $ " * " ++ dir    
+        putStrLn $ " * " ++ dir
         let configFiles = map (dir </>) configFileNames
         configs <- mapM getConfig configFiles
         let entries = map generateEntry configs
@@ -86,10 +88,10 @@ joinEntries entries = contents
         moduleDeclaration = "module Scripts.ScriptsList where\n\n"
 
         scriptImport = "import Script\n\n"
-    
+
         imports = unlines is
 
-        scriptsListDoc = "-- | The list of scripts\n"        
+        scriptsListDoc = "-- | The list of scripts\n"
 
         scriptsListHeader = "scripts :: [IVIScript] \n"
 

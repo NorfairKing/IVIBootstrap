@@ -1,19 +1,20 @@
 module Config where
 
-import System.FilePath (takeDirectory)
+import           System.FilePath   (takeDirectory)
 
-import Data.Configurator as C (Worth (..), load, lookup)
+import           Data.Configurator as C (Worth (..), load, lookup)
 
-import Constants (sourceFileNameConfig, nameConfig, executeFunctionNameConfig, regexesConfig)
+import           Constants         (executeFunctionNameConfig, nameConfig,
+                                    regexesConfig, sourceFileNameConfig)
 {-
     Data structure for a '.ivi' file
 -}
-data Config = Config { 
-                          scriptDir :: FilePath
-                        , sourceFileName :: String
-                        , name :: String
+data Config = Config {
+                          scriptDir           :: FilePath
+                        , sourceFileName      :: String
+                        , name                :: String
                         , executeFunctionName :: String
-                        , regexes :: [String]
+                        , regexes             :: [String]
                      }
     deriving (Show)
 

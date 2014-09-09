@@ -2,12 +2,12 @@ module Version where
 
 -- | Check if the current IVI version matches the IVI version of the script
 checkVersion :: String -> String -> Bool
-checkVersion sv iv = 
+checkVersion sv iv =
     sa == ia && sb == ib && ic >= sc
-    where 
+    where
         (sa,sb,sc,_) = stripVersion sv
         (ia,ib,ic,_) = stripVersion iv
-        
+
 -- | Parse a version string into a quadruple for processing (warning: unsafe)
 stripVersion :: String -> (String, String, String, String)
 stripVersion str = (\[a,b,c,d] -> (a,b,c,d)) $ go str [] []
